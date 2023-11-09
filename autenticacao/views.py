@@ -3,9 +3,12 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.messages import constants
+from django.contrib import auth
 
 def cadastro(request):
     if request.method == "GET":
+        if request.user.is_authenticated:
+            return redirect('/')
         return render(request, 'cadastro.html')
     elif request.method == "POST":
         username = request.POST.get('username')
@@ -38,4 +41,28 @@ def cadastro(request):
             return redirect('/auth/cadastro/')
 
 def logar(request):
-    pass
+    if request.method == "GET":
+        if request.user.is_authenticated:
+            return redirect('/')
+        return render(request, 'login.html')
+    elif request.method == "POST":
+        username = request.POST.get('username')
+        senha = request.POST.get('password')
+
+        if len(username.strip()) == 0 or len(senha.strip()) == 0:
+            messages.add_message(request, constants.ERROR, 'Preencha todos os campos')
+            return redirect('/auth/logar/')
+
+        usuario = auth.authenticate(username=username, password=senha)
+
+        if not usuario:
+            messages.add_message(request, constants.ERROR, 'Username ou senha inválidos')
+            return redirect('/auth/logar')
+        else:
+            auth.login(request, usuario)
+            return redirect('/')
+
+        
+def sair(request):
+    auth.logout(request)
+    return redirect('/auth/logar')
